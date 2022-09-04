@@ -1,0 +1,9 @@
+docplex
+emllib
+matplotlib
+numpy
+pandas
+pydoe
+scikit-learn
+seaborn
+tensorflow
