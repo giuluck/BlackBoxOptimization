@@ -1,5 +1,6 @@
 docplex
 emllib
+jupyter
 matplotlib
 numpy
 pandas
