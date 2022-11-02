@@ -20,6 +20,6 @@ class AckleyProblem(Problem):
 
     def evaluate(self, x: np.ndarray) -> np.ndarray:
         d = self.input_shape
-        term1 = -self.a * np.exp(-self.b * np.sqrt(np.sum(x ** 2, axis=-1) / d))
-        term2 = -np.exp(np.sum(np.cos(self.c * x), axis=-1) / d)
-        return term1 + term2 + self.a + np.e
+        term1 = self.a * np.exp(-self.b * np.sqrt(np.sum(x ** 2, axis=-1) / d))
+        term2 = np.exp(np.sum(np.cos(self.c * x), axis=-1) / d)
+        return term1 + term2 - self.a - np.e

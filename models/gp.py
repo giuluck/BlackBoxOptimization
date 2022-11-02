@@ -15,7 +15,7 @@ class GaussianProcess(Model):
         self.model.fit(x, y)
 
     def mean(self, x: np.ndarray) -> np.ndarray:
-        return self.model.predict(x)
+        return self.model.predict(x).flatten()
 
     def std(self, x: np.ndarray) -> np.ndarray:
         return self.model.predict(x, return_std=True)[1]

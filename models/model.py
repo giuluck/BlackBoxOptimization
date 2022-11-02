@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any
+from typing import Any, Callable, Optional
 
 import numpy as np
 from sklearn.gaussian_process.kernels import Kernel, RBF, ConstantKernel as Const
@@ -57,7 +57,21 @@ class Model:
         raise NotImplementedError()
 
 
-class EmbedModel(Model, ABC):
-    def embed(self) -> Any:
-        """Embeds the model into the Empirical Model Learning framework."""
+class VarianceModel(Model, ABC):
+    def __init__(self, std: Callable):
+        super(VarianceModel, self).__init__()
+
+        self.std_fn: Callable = std
+        """The function f(samples, references) -> std computing the standard deviation of sample points."""
+
+        self.points: Optional[np.ndarray] = None
+        """The reference points used for fitting."""
+
+    def std(self, x: np.ndarray) -> np.ndarray:
+        return self.std_fn(samples=x, references=self.points)
+
+
+class EncodeModel(Model, ABC):
+    def encode(self, backend, model, x_var, y_var, name='encoding') -> Any:
+        """Encodes the model into the Empirical Model Learning framework."""
         return NotImplementedError()

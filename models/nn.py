@@ -2,16 +2,17 @@ from typing import Dict, Any, Optional, Callable, List, Union
 
 import numpy as np
 from eml.net.reader import keras_reader
+from eml.net.embed import encode
 from keras.layers import Dense
 from keras.models import Sequential, clone_model
 
-from models.model import EmbedModel
+from models.model import EncodeModel, VarianceModel
 
 
-class NeuralNetwork(EmbedModel):
+class NeuralNetwork(VarianceModel, EncodeModel):
     def __init__(self,
                  units: List[int] = (16, 16),
-                 std: Callable = EmbedModel.gp_std,
+                 std: Callable = EncodeModel.gp_std,
                  loss: Any = 'mse',
                  optimizer: Any = 'adam',
                  metrics: Optional[List] = None,
@@ -34,7 +35,7 @@ class NeuralNetwork(EmbedModel):
             - for level 2, neither the weights nor the optimizer are reinitialized.
         """
         assert warm_start in [0, 1, 2, True, False], "'warm_start' must be either a boolean or an integer in {0, 1, 2}"
-        super(NeuralNetwork, self).__init__()
+        super(NeuralNetwork, self).__init__(std=std)
         layers = [Dense(hu, activation='relu', **layer_kwargs) for hu in units] + [Dense(1, **layer_kwargs)]
 
         self.model: Sequential = Sequential(layers)
@@ -64,9 +65,6 @@ class NeuralNetwork(EmbedModel):
         )
         """Custom arguments to be passed to the '.compile()' method."""
 
-        self.std_fn: Callable = std
-        """The function f(samples, references) -> std computing the standard deviation of sample points."""
-
         self.points: Optional[np.ndarray] = None
         """The reference points used for fitting."""
 
@@ -90,8 +88,6 @@ class NeuralNetwork(EmbedModel):
     def mean(self, x: np.ndarray) -> np.ndarray:
         return self.model.predict(x, verbose=False).flatten()
 
-    def std(self, x: np.ndarray) -> np.ndarray:
-        return self.std_fn(samples=x, references=self.points)
-
-    def embed(self) -> Any:
-        return keras_reader.read_keras_sequential(self.model)
+    def encode(self, backend, model, x_var, y_var, name='encoding') -> Any:
+        network = keras_reader.read_keras_sequential(self.model)
+        return encode(backend, network, model, x_var, y_var, name=name)
