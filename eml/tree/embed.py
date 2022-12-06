@@ -118,31 +118,40 @@ def encode_backward_implications(bkd, tree, mdl, tree_in, tree_out, name):
         crules.append(res)
     # ------------------------------------------------------------------------
     # Process all conditions in all rules
-    built = set()
-    for k, r in enumerate(rules):
-        for aname, atype, (th1, th2) in r[:-1]:
-            # If the constraint has already been built, then do nothing
-            if (aname, th1, th2) in built:
-                continue
-            # Identify all rules that are based on this condition
-            # Should work with implied rules, too
-            # impl = [k for k, cr in enumerate(crules) if
-            #         aname in cr and
-            #         cr[aname][0] <= th1 and th2 < cr[aname][1]]
-            based = [k for k, cr in enumerate(crules) if
-                     aname in cr and
-                     th1 <= cr[aname][0] and cr[aname][1] < th2]
-            if th2 != float('inf'):
-                M = tree.ub(aname)
-                th = th2
-                coefs = [1] + [M - th] * len(based)
-                terms = [tree_in[aname]] + [Z[k] for k in based]
-                cst = bkd.cst_leq(mdl, bkd.xpr_scalprod(mdl, coefs, terms), M)
+    for irule, crule in enumerate(crules):
+        for aname, (th1, th2) in crule.items():
+            x_var, z_var = tree_in[aname], Z[irule]
             if th1 != -float('inf'):
-                m = tree.lb(aname)
-                th = th1 + bkd.const_eps(mdl)
-                coefs = [1] + [m - th] * len(based)
-                terms = [tree_in[aname]] + [Z[k] for k in based]
-                cst = bkd.cst_geq(mdl, bkd.xpr_scalprod(mdl, coefs, terms), m)
+                bkd.cst_geq(mdl, x_var, th1 * z_var + tree.lb(aname) * (1 - z_var))
+            if th2 != float('inf'):
+                bkd.cst_leq(mdl, x_var, th2 * z_var + tree.ub(aname) * (1 - z_var))
+
+    # built = set()
+    # for k, r in enumerate(rules):
+    #     for aname, atype, (th1, th2) in r[:-1]:
+    #         # If the constraint has already been built, then do nothing
+    #         if (aname, th1, th2) in built:
+    #             continue
+    #         # Identify all rules that are based on this condition
+    #         # Should work with implied rules, too
+    #         # impl = [k for k, cr in enumerate(crules) if
+    #         #         aname in cr and
+    #         #         cr[aname][0] <= th1 and th2 < cr[aname][1]]
+    #         based = [k for k, cr in enumerate(crules) if
+    #                  aname in cr and
+    #                  th1 <= cr[aname][0] and cr[aname][1] < th2]
+    #         if th2 != float('inf'):
+    #             M = tree.ub(aname)
+    #             th = th2
+    #             coefs = [1] + [M - th] * len(based)
+    #             terms = [tree_in[aname]] + [Z[k] for k in based]
+    #             cst = bkd.cst_leq(mdl, bkd.xpr_scalprod(mdl, coefs, terms), M)
+    #         if th1 != -float('inf'):
+    #             m = tree.lb(aname)
+    #             th = th1 + bkd.const_eps(mdl)
+    #             coefs = [1] + [m - th] * len(based)
+    #             terms = [tree_in[aname]] + [Z[k] for k in based]
+    #             cst = bkd.cst_geq(mdl, bkd.xpr_scalprod(mdl, coefs, terms), m)
+
     # Return the descriptor
     return desc
